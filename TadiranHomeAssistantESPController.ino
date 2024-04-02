@@ -1,8 +1,28 @@
 #include "Tadiran.h"
+// #include <M5Atom.h>
+// #include <FastLED.h>
+#include <LiteLED.h>
 #include <IRremote.hpp>
 #include <EspMQTTClient.h>
 
 const uint16_t kIrLed = 12;
+
+// Choose the LED type from the list below.
+// #define LED_TYPE LED_STRIP_WS2812
+#define LED_TYPE LED_STRIP_SK6812
+// #define LED_TYPE LED_STRIP_APA106
+// #define LED_TYPE LED_STRIP_SM16703
+
+#define LED_TYPE_IS_RGBW 1
+#define LED_GPIO 27
+#define LED_BRIGHT 100
+
+static const crgb_t L_RED = 0xff0000;
+static const crgb_t L_GREEN = 0x00ff00;
+static const crgb_t L_BLUE = 0x0000ff;
+static const crgb_t L_WHITE = 0xe0e0e0;
+
+LiteLED myLED( LED_TYPE, LED_TYPE_IS_RGBW );
 
 EspMQTTClient client(
   "Froot",
@@ -35,7 +55,7 @@ void onConnectionEstablished() {
   //   client.publish("mytopic/wildcardtest/test123", "This is a message sent 5 seconds later");
   // });
 
-  client.subscribe("ac/toggle", toggleAC);
+  client.subscribe("ron/ac/power/set", toggleAC);
 }
 
 
@@ -56,6 +76,11 @@ Tadiran tadiran(mode, fanspeed, temperature, power == 1 ? 1 : 0);
 
 void setup() {
   Serial.begin(115200);
+  myLED.begin( LED_GPIO, 1 );
+  myLED.brightness( LED_BRIGHT );
+  myLED.setPixel( 0, L_BLUE, 1 );
+
+
   // irsend.begin(kIrLed);
   IrSender.begin(kIrLed);
   Serial.println("Commands: +/- Temperature | m - Mode | f - fanspeed | p - Power");
@@ -151,9 +176,11 @@ void toggleAC(const String& topic, const String& message) {
   if (power) {
     power = false;
     tadiran.setState(STATE_on);
+    myLED.setPixel( 0, L_GREEN, 1 );
   } else {
     power = true;
     tadiran.setState(STATE_off);
+    myLED.setPixel( 0, L_RED, 1 );
   }
 
   tadiran.print();
