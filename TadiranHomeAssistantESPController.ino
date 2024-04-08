@@ -34,6 +34,8 @@ EspMQTTClient client(
   1883                                                                 // The MQTT port, default to 1883. this line can be omitted
 );
 
+bool light = true;
+
 // This function is called once everything is connected (Wifi and MQTT)
 // WARNING : YOU MUST IMPLEMENT IT IF YOU USE EspMQTTClient
 void onConnectionEstablished() {
@@ -56,6 +58,7 @@ void onConnectionEstablished() {
   // });
 
   client.subscribe("ron/ac/power/set", toggleAC);
+  client.subscribe("ron/ac/light/set", toggleACLight);
   client.subscribe("ron/ac/mode/set", setMode);
 }
 
@@ -193,26 +196,59 @@ void setMode(const String& topic, const String& message) {
   Serial.println(message); // "off", "cool", "fan_only"
   if (message == "off") { // TO REMOVE
     tadiran.setState(STATE_off);
-    myLED.setPixel( 0, L_WHITE, 1 );
+    setLED(L_WHITE);
   } else if (message == "cool") {
     tadiran.setState(STATE_on);
     tadiran.setMode(MODE_cold);
-    myLED.setPixel( 0, L_BLUE, 1 );
+    setLED(L_BLUE);
   } else if (message == "fan_only") {
     tadiran.setState(STATE_on);
     tadiran.setMode(MODE_fan);
-    myLED.setPixel( 0, L_GREEN, 1 );
+    setLED(L_GREEN);
   } else if (message == "heat") {
     tadiran.setState(STATE_on);
     tadiran.setMode(MODE_heat);
-    myLED.setPixel( 0, L_RED, 1 );
+    setLED(L_RED);
   } else if (message == "dry") {
     tadiran.setState(STATE_on);
     tadiran.setMode(MODE_dry);
-    myLED.setPixel( 0, 0xffff00, 1 ); // Yellow
+    setLED(0xffff00); // Yellow
   }
 
   tadiran.print();
   Serial.println();
   IrSender.sendRaw(tadiran.codes, TADIRAN_BUFFER_SIZE, 38);
+}
+
+void toggleACLight(const String& topic, const String& message) {
+  light = !light;
+  
+  Serial.println();
+  if (light) { 
+    Serial.println("AC light ON");
+    tadiran.codes[45] = CODE_high;
+    if (tadiran.getState() == STATE_off) { setLED(L_WHITE); }
+    else if (tadiran.getMode() == MODE_cold) { setLED(L_BLUE); }
+    else if (tadiran.getMode() == MODE_fan) { setLED(L_GREEN); }
+    else if (tadiran.getMode() == MODE_heat) { setLED(L_RED); }
+    else if (tadiran.getMode() == MODE_dry) { setLED(0xffff00); } // Yellow
+  }
+  else { 
+    Serial.println("AC light OFF");
+    tadiran.codes[45] = CODE_filler;
+    setLED(0x000000);
+  }
+
+  Serial.println();
+  IrSender.sendRaw(tadiran.codes, TADIRAN_BUFFER_SIZE, 38);
+}
+
+void setLED(crgb_t color){
+  if (light) {
+    myLED.setPixel( 0, color, 1 );
+  } else {
+    myLED.setPixel( 0, color, 1 );
+    delay(100);
+    myLED.setPixel( 0, 0x000000, 1 );
+  }
 }
