@@ -203,7 +203,7 @@ Tadiran::Tadiran(uint8_t _mode,
 	codes[0] = CODE_first;
 	codes[1] = CODE_second;
 	// set the "always high" fields
-	codes[45] = CODE_high;//lights is allways on
+	codes[45] = CODE_high;//lights is allways on (SET TO CODE_filler for off)
 	codes[59] = CODE_high;//allways 0x5 on bits 4..7 in BYTE 3
 	codes[63] = CODE_high;//allways 0x5 on bits 4..7 in BYTE 3
 	codes[69] = CODE_high;//allways 0x2 on bits 0..2 in BYTE 4

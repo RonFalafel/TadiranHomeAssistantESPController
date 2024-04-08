@@ -56,6 +56,7 @@ void onConnectionEstablished() {
   // });
 
   client.subscribe("ron/ac/power/set", toggleAC);
+  client.subscribe("ron/ac/mode/set", setMode);
 }
 
 
@@ -172,17 +173,46 @@ void loop() {
 }
 
 void toggleAC(const String& topic, const String& message) {
-  Serial.print("Power");
+  Serial.println("Power");
+  Serial.println(message);
   if (power) {
-    power = false;
     tadiran.setState(STATE_on);
     myLED.setPixel( 0, L_GREEN, 1 );
   } else {
-    power = true;
     tadiran.setState(STATE_off);
     myLED.setPixel( 0, L_RED, 1 );
   }
 
   tadiran.print();
+  IrSender.sendRaw(tadiran.codes, TADIRAN_BUFFER_SIZE, 38);
+}
+
+void setMode(const String& topic, const String& message) {
+  Serial.println();
+  Serial.println("Setting Mode:");
+  Serial.println(message); // "off", "cool", "fan_only"
+  if (message == "off") { // TO REMOVE
+    tadiran.setState(STATE_off);
+    myLED.setPixel( 0, L_WHITE, 1 );
+  } else if (message == "cool") {
+    tadiran.setState(STATE_on);
+    tadiran.setMode(MODE_cold);
+    myLED.setPixel( 0, L_BLUE, 1 );
+  } else if (message == "fan_only") {
+    tadiran.setState(STATE_on);
+    tadiran.setMode(MODE_fan);
+    myLED.setPixel( 0, L_GREEN, 1 );
+  } else if (message == "heat") {
+    tadiran.setState(STATE_on);
+    tadiran.setMode(MODE_heat);
+    myLED.setPixel( 0, L_RED, 1 );
+  } else if (message == "dry") {
+    tadiran.setState(STATE_on);
+    tadiran.setMode(MODE_dry);
+    myLED.setPixel( 0, 0xffff00, 1 ); // Yellow
+  }
+
+  tadiran.print();
+  Serial.println();
   IrSender.sendRaw(tadiran.codes, TADIRAN_BUFFER_SIZE, 38);
 }
